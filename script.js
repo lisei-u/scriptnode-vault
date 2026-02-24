@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3000';
+const API_URL = 'https://scriptnode-vault.onrender.com';
 let authToken = localStorage.getItem('token');
 let currentUser = JSON.parse(localStorage.getItem('user'));
 
