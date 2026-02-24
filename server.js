@@ -11,7 +11,11 @@ const MONGO_URI = process.env.MONGODB_URI;
 const JWT_SECRET = process.env.JWT_SECRET;
 // --- НАЛАШТУВАННЯ ---
 app.use(express.json());
-app.use(cors()); // Дозволяє фронтенду звертатися до сервера
+app.use(cors({
+    origin: 'https://lisei-u.github.io', // Твій домен на GitHub Pages
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 
 // --- ПІДКЛЮЧЕННЯ ДО БД ---
