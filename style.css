@@ -133,11 +133,21 @@ input, textarea, select {
     outline: none;
 }
 
+
 .explanation-content {
-    margin-top: 10px;
+    /* Скидаємо вирівнювання */
+    text-align: left; 
+    
+    /* Залишаємо переноси, але ігноруємо зайві пробіли на початку */
+    white-space: pre-line; 
+    
+    /* Прибираємо внутрішні відступи, якщо вони завеликі */
+    padding: 0;
+    margin: 10px 0 0 0;
+    
     font-size: 0.95em;
     line-height: 1.5;
-    white-space: pre-wrap;
+    color: var(--text-color);
 }
 
 /* 6. РЕДАКТОР КОДУ */
