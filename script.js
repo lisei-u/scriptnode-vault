@@ -5,7 +5,6 @@ let currentUser = JSON.parse(localStorage.getItem('user'));
 // 1. ПЕРЕВІРКА ПРИ ЗАВАНТАЖЕННІ
 window.onload = () => {
     if (!authToken) {
-        // Замість prompt краще показувати приховану форму входу
         document.getElementById('auth-section').style.display = 'block';
         document.getElementById('app-section').style.display = 'none';
     } else {
@@ -40,7 +39,7 @@ async function login(username, password) {
             currentUser = data.user;
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
-            initApp(); // Перемикаємо інтерфейс без перезавантаження
+            initApp();
         } else {
             alert('❌ Помилка: ' + (data.error || 'Невірні дані'));
         }
@@ -76,10 +75,10 @@ async function loadTasks() {
 // 5. ДОДАВАННЯ ЗАДАЧІ (Адмін)
 async function addTask() {
     const taskData = {
-        title: document.getElementById('task-title').value,
+        title: document.getElementById('task-title').value.trim(),
         category: document.getElementById('task-category').value,
-        desc: document.getElementById('task-desc').value,
-        explanation: document.getElementById('task-explanation').value // ПОЛЕ ПОЯСНЕННЯ
+        desc: document.getElementById('task-desc').value.trim(),
+        explanation: document.getElementById('task-explanation').value.trim() // trim() прибирає зайві пробіли
     };
 
     if (!taskData.title || !taskData.desc) return alert("Заповніть назву та опис!");
@@ -95,8 +94,7 @@ async function addTask() {
 
     if (res.ok) {
         alert('✅ Задача успішно додана!');
-        // Очищуємо поля
-        ['task-title', 'task-category', 'task-desc', 'task-explanation'].forEach(id => document.getElementById(id).value = '');
+        ['task-title', 'task-desc', 'task-explanation'].forEach(id => document.getElementById(id).value = '');
         loadTasks();
     } else {
         alert('🚫 Помилка створення. Перевірте права.');
@@ -128,7 +126,7 @@ async function toggleTaskStatus(taskId) {
     }
 }
 
-// 7. ВІДОБРАЖЕННЯ КАРТОК (З поясненням!)
+// 7. ВІДОБРАЖЕННЯ КАРТОК
 function renderTasks(tasks) {
     const list = document.getElementById('task-list');
     list.innerHTML = '';
@@ -149,9 +147,7 @@ function renderTasks(tasks) {
                 <div class="explanation-container">
                     <details>
                         <summary>💡 Підказка та пояснення</summary>
-                        <div class="explanation-content">
-                            ${task.explanation}
-                        </div>
+                        <div class="explanation-content">${task.explanation.trim()}</div>
                     </details>
                 </div>` : ''}
 
@@ -170,9 +166,25 @@ function renderTasks(tasks) {
     });
 }
 
+// 8. ДОПОМІЖНІ ФУНКЦІЇ
 function checkAdminUI() {
     const adminPanel = document.getElementById('admin-panel');
     if (adminPanel) {
         adminPanel.style.display = (currentUser && currentUser.role === 'admin') ? 'block' : 'none';
     }
+}
+
+// Функція пошуку (додай цей блок)
+function filterTasks() {
+    const query = document.getElementById('search-input').value.toLowerCase();
+    const cards = document.querySelectorAll('.task-card');
+    cards.forEach(card => {
+        const title = card.querySelector('h3').innerText.toLowerCase();
+        const category = card.querySelector('.badge').innerText.toLowerCase();
+        if (title.includes(query) || category.includes(query)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
 }
