@@ -47,44 +47,37 @@ window.toggleTaskStatus = async function(taskId) {
     const card = document.querySelector(`[data-id="${taskId}"]`);
     const isCompleted = card.classList.contains('completed');
 
-    // Якщо ми скасовуємо виконання (uncomplete)
-    if (isCompleted) {
-        await sendStatus(taskId, 'uncomplete', codeValue);
-        return;
-    }
-
-    // Якщо в задачі є очікувана відповідь - перевіряємо код
+    // 1. Якщо ми хочемо ПЕРЕВІРИТИ або ПЕРЕВЕРІРИТИ код
     if (task.expectedValue) {
         try {
             const userFunc = new Function(codeValue);
-            const result = userFunc();
-            
-            // Порівнюємо через JSON.stringify, щоб працювали масиви [1,2] та об'єкти {a:1}
-            // Ми також пропускаємо через JSON.parse очікуване значення, щоб воно стало об'єктом перед порівнянням
+            const userResult = userFunc();
             
             let expectedParsed;
             try {
-                // Намагаємось розпарсити очікуване значення (якщо це масив або об'єкт)
                 expectedParsed = JSON.parse(task.expectedValue);
             } catch (e) {
-                // Якщо це просто рядок (напр. Hello), лишаємо як рядок
                 expectedParsed = task.expectedValue;
             }
 
-            const isCorrect = JSON.stringify(result) === JSON.stringify(expectedParsed);
+            const isCorrect = JSON.stringify(userResult) === JSON.stringify(expectedParsed);
 
             if (isCorrect) {
-                alert(`🚀 Вірно! Результат: ${JSON.stringify(result)}`);
+                alert(`🚀 Вірно! Результат: ${JSON.stringify(userResult)}`);
                 await sendStatus(taskId, 'complete', codeValue);
             } else {
-                alert(`❌ Невірно.\nОтримано: ${JSON.stringify(result)}\nОчікували: ${JSON.stringify(expectedParsed)}`);
+                alert(`❌ Невірно.\nОтримано: ${JSON.stringify(userResult)}\nОчікували: ${JSON.stringify(expectedParsed)}`);
+                // Важливо: не виходимо, щоб користувач міг виправити
+                return; 
             }
         } catch (e) {
             alert("⚠️ Помилка у твоєму коді: " + e.message);
+            return;
         }
     } else {
-        // Якщо перевірка не задана, просто зберігаємо прогрес
-        await sendStatus(taskId, 'complete', codeValue);
+        // 2. Якщо перевірки немає, працюємо як раніше (toggle)
+        const action = isCompleted ? 'uncomplete' : 'complete';
+        await sendStatus(taskId, action, codeValue);
     }
 };
 
