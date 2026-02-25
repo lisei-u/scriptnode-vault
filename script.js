@@ -3,6 +3,12 @@ let authToken = localStorage.getItem('token');
 let currentUser = JSON.parse(localStorage.getItem('user'));
 let allTasks = [];
 
+// Прив'язуємо функції до window, щоб HTML їх бачив
+window.login = login;
+window.logout = logout;
+window.addTask = addTask;
+window.filterTasks = filterTasks;
+
 window.onload = () => {
     if (authToken) initApp();
 };
@@ -33,21 +39,28 @@ function initApp() {
 }
 
 async function loadTasks() {
-    const res = await fetch(`${API_URL}/tasks`, {
-        headers: { 'Authorization': `Bearer ${authToken}` }
-    });
-    allTasks = await res.json();
-    renderTasks(allTasks);
+    try {
+        const res = await fetch(`${API_URL}/tasks`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        allTasks = await res.json();
+        renderTasks(allTasks);
+    } catch (e) { console.error("Помилка завантаження:", e); }
 }
 
-// ПЕРЕВІРКА ТА ЗБЕРЕЖЕННЯ
 window.toggleTaskStatus = async function(taskId) {
     const task = allTasks.find(t => t._id === taskId);
     const codeValue = document.getElementById(`code-${taskId}`).value;
     const card = document.querySelector(`[data-id="${taskId}"]`);
     const isCompleted = card.classList.contains('completed');
 
-    // 1. Якщо ми хочемо ПЕРЕВІРИТИ або ПЕРЕВЕРІРИТИ код
+    // ПРАВКА: Якщо задача вже виконана — просто скасовуємо її
+    if (isCompleted) {
+        await sendStatus(taskId, 'uncomplete', codeValue);
+        return;
+    }
+
+    // Якщо є перевірка — запускаємо тест
     if (task.expectedValue) {
         try {
             const userFunc = new Function(codeValue);
@@ -60,14 +73,11 @@ window.toggleTaskStatus = async function(taskId) {
                 expectedParsed = task.expectedValue;
             }
 
-            const isCorrect = JSON.stringify(userResult) === JSON.stringify(expectedParsed);
-
-            if (isCorrect) {
+            if (JSON.stringify(userResult) === JSON.stringify(expectedParsed)) {
                 alert(`🚀 Вірно! Результат: ${JSON.stringify(userResult)}`);
                 await sendStatus(taskId, 'complete', codeValue);
             } else {
                 alert(`❌ Невірно.\nОтримано: ${JSON.stringify(userResult)}\nОчікували: ${JSON.stringify(expectedParsed)}`);
-                // Важливо: не виходимо, щоб користувач міг виправити
                 return; 
             }
         } catch (e) {
@@ -75,9 +85,7 @@ window.toggleTaskStatus = async function(taskId) {
             return;
         }
     } else {
-        // 2. Якщо перевірки немає, працюємо як раніше (toggle)
-        const action = isCompleted ? 'uncomplete' : 'complete';
-        await sendStatus(taskId, action, codeValue);
+        await sendStatus(taskId, 'complete', codeValue);
     }
 };
 
