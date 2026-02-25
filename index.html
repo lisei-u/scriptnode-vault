@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JS Task Tracker Pro | Vault</title>
-    <link rel="stylesheet" href="style.css"> </head>
+    <link rel="stylesheet" href="style.css">
+</head>
 <body>
 
     <div id="auth-section">
@@ -13,17 +14,17 @@
             <p>Увійдіть, щоб отримати доступ до місій</p>
             <input type="text" id="login-username" placeholder="Ваш логін">
             <input type="password" id="login-password" placeholder="Ваш пароль">
-            <button class="add-btn login-wide" onclick="handleLogin()">Увійти в Vault</button>
+            <button class="add-btn login-wide" onclick="handleLogin()">Увійдіть в Vault</button>
         </div>
     </div>
 
-    <div id="app-section">
+    <div id="app-section" style="display:none">
         <div class="header-flex">
             <h1 class="main-title">⚡ ScriptNode Vault</h1>
             <button id="logout-btn" onclick="logout()">Вихід</button>
         </div>
 
-        <div id="admin-panel" class="form-container">
+        <div id="admin-panel" class="form-container" style="display:none">
             <h2>➕ Нова задача</h2>
             <div class="input-group">
                 <input type="text" id="task-title" placeholder="Назва місії...">
@@ -37,10 +38,8 @@
             </div>
             <textarea id="task-desc" placeholder="Умова задачі..." rows="2"></textarea>
             <textarea id="task-explanation" placeholder="Приклади / Пояснення / Підказки" rows="2"></textarea>
-            <textarea id="task-explanation" placeholder="Приклади / Пояснення / Підказки" rows="2"></textarea>
             <input type="text" id="task-expected" placeholder="Очікувана відповідь (напр. 10 або [1,2,3])" style="margin-top: 10px; width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #222; color: white;">
-            <button class="add-btn" onclick="addTask()">Додати в базу</button>
-            <button class="add-btn" onclick="addTask()">Додати в базу</button>
+            <button class="add-btn" style="margin-top:10px;" onclick="addTask()">Додати в базу</button>
         </div>
 
         <div class="controls">
