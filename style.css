@@ -1,13 +1,16 @@
-/* Основні налаштування та змінні для темної/світлої теми */
+/* 1. ЗМІННІ ТА ТЕМИ */
 :root {
-    --bg-color: #f0f2f5;
+    --bg-color: #f4f7f6;
     --card-bg: #ffffff;
     --text-color: #333333;
     --input-bg: #ffffff;
     --input-border: #dddddd;
-    --explanation-bg: #e3f2fd;
-    --explanation-border: #1a73e8;
-    --title-color: #1a73e8;
+    --explanation-bg: #fff9db;
+    --explanation-border: #f1c40f;
+    --title-color: #2c3e50;
+    --accent-color: #3498db;
+    --success-color: #2ecc71;
+    --error-color: #e74c3c;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -17,194 +20,155 @@
         --text-color: #e0e0e0;
         --input-bg: #2d2d2d;
         --input-border: #444444;
-        --explanation-bg: #162635;
-        --explanation-border: #42a5f5;
+        --explanation-bg: #2d2d2d;
+        --explanation-border: #f1c40f;
         --title-color: #90caf9;
+        --accent-color: #2980b9;
     }
 }
 
+/* 2. ЗАГАЛЬНІ СТИЛІ */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-color);
-    padding: 20px;
     margin: 0;
+    padding: 20px;
     transition: background 0.3s, color 0.3s;
 }
 
-.main-container {
-    max-width: 850px;
+#auth-section, #app-section {
+    display: none; 
+    max-width: 900px;
     margin: 0 auto;
 }
 
-/* Креативний заголовок */
-.main-title {
-    text-align: center;
-    color: var(--title-color);
-    font-size: 2.5rem;
-    text-transform: uppercase;
-    letter-spacing: 2px;
+.header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--input-border);
+    padding-bottom: 10px;
     margin-bottom: 30px;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
 }
 
-/* Форма додавання */
-.form-container {
-    background: var(--card-bg);
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    margin-bottom: 25px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+.main-title {
+    color: var(--title-color);
+    margin: 0;
+    font-size: 2rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
+
+/* 3. ФОРМИ ТА КНОПКИ */
+.login-box, .form-container {
+    background: var(--card-bg);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    margin-bottom: 25px;
+}
+
+.login-box { text-align: center; margin-top: 80px; }
 
 input, textarea, select {
+    width: 100%;
     padding: 12px;
+    margin: 8px 0;
     background: var(--input-bg);
     color: var(--text-color);
     border: 1px solid var(--input-border);
     border-radius: 8px;
+    box-sizing: border-box;
+    font-size: 14px;
     outline: none;
-    font-size: 14px;
 }
 
-/* Картки задач */
-.task-card {
-    background: var(--card-bg);
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    border-left: 6px solid #ccc;
-    transition: transform 0.2s;
-}
-
-.task-card:hover {
-    transform: translateY(-2px);
-}
-
-.task-card.completed {
-    border-left-color: #4caf50;
-}
-
-/* КОМПАКТНИЙ БЛОК ПОЯСНЕННЯ */
-.explanation-display {
-    background: var(--explanation-bg);
-    padding: 10px 15px;
-    border-radius: 8px;
-    margin-top: 12px;
-    border-left: 4px solid var(--explanation-border);
-    color: var(--text-color);
-}
-
-.explanation-header {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 4px;
-    color: var(--explanation-border);
-    font-size: 14px;
-}
-
-.explanation-content {
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    font-size: 14px;
-    line-height: 1.4;
-    margin: 0;
-}
-
-/* Блок коду */
-.code-display {
-    background: #282c34; /* Залишаємо темним завжди для стилю */
-    color: #abb2bf;
-    padding: 15px;
-    border-radius: 8px;
-    margin-top: 10px;
-    font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 13px;
-    white-space: pre-wrap;
-    border: 1px solid #3e4451;
-}
-
-/* Кнопки */
-.add-btn {
-    background: #1a73e8;
-    color: white;
+.add-btn, .action-btn, #logout-btn {
+    padding: 12px 24px;
     border: none;
-    padding: 14px;
     border-radius: 8px;
     cursor: pointer;
     font-weight: bold;
+    transition: 0.3s;
 }
 
-.filter-btn {
+.add-btn, .action-btn { background-color: var(--accent-color); color: white; }
+.add-btn:hover { opacity: 0.9; }
+
+#logout-btn { background-color: var(--error-color); color: white; }
+#logout-btn:hover { background-color: #c0392b; }
+
+/* 4. КАРТКИ ЗАДАЧ */
+.task-card {
     background: var(--card-bg);
-    color: var(--title-color);
-    border: 1px solid var(--title-color);
-    padding: 6px 14px;
-    border-radius: 20px;
-    cursor: pointer;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-left: 6px solid #ccc;
 }
 
-.filter-btn.active {
-    background: var(--title-color);
-    color: var(--card-bg);
+.task-card:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
+
+.task-card.completed {
+    border-left-color: var(--success-color);
+    background-color: rgba(46, 204, 113, 0.05);
 }
 
-.toggle-sol-btn {
-    background: #444;
-    color: white;
-    border: none;
-    padding: 8px 15px;
+/* 5. ПОЯСНЕННЯ (EXPLANATION) */
+.explanation-container {
+    background: var(--explanation-bg);
+    border-left: 4px solid var(--explanation-border);
+    padding: 12px;
+    margin: 15px 0;
     border-radius: 6px;
-    cursor: pointer;
-    margin-top: 10px;
 }
-.code-editor {
-    width: 100%;
-    min-height: 100px;
-    background-color: #1e1e1e;
-    color: #d4d4d4;
-    font-family: 'Courier New', Courier, monospace;
-    padding: 10px;
-    border-radius: 5px;
+
+.explanation-container summary {
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--explanation-border);
+    outline: none;
+}
+
+.explanation-content {
     margin-top: 10px;
-    resize: vertical;
+    font-size: 0.95em;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+/* 6. РЕДАКТОР КОДУ */
+.code-container {
+    background: #1e1e1e;
+    padding: 15px;
+    border-radius: 10px;
+    margin: 15px 0;
     border: 1px solid #333;
 }
 
-.btn-undo {
-    background-color: #ff9800; /* Помаранчевий для скасування */
-    color: white;
+.code-editor {
+    width: 100%;
+    min-height: 150px;
+    background: transparent;
+    color: #dcdcdc;
+    border: none;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 14px;
+    resize: vertical;
+    outline: none;
 }
 
-.btn-done {
-    background: #4CAF50;
-    color: white;
+/* 7. ДОПОМІЖНІ ЕЛЕМЕНТИ */
+.badge {
+    background: rgba(0,0,0,0.05);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8em;
+    color: #7f8c8d;
+    margin-left: 10px;
 }
 
-.task-card.completed {
-    border-left: 8px solid #4CAF50;
-    background-color: #f0fff0;
-}
-.explanation-container {
-    background: #2d2d2d;
-    border-radius: 5px;
-    padding: 8px;
-    margin: 10px 0;
-    border-left: 4px solid #f1c40f;
-}
-.explanation-container summary {
-    cursor: pointer;
-    color: #f1c40f;
-    font-weight: bold;
-}
-.explanation-content {
-    margin-top: 8px;
-    color: #ddd;
-    font-size: 0.9em;
-    line-height: 1.4;
-}
+.controls { margin-bottom: 20px; }

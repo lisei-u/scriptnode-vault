@@ -4,82 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JS Task Tracker Pro | Vault</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        /* Додаткові стилі для нових функцій */
-        .header-flex {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        #logout-btn {
-            background-color: #ff4757;
-            color: white;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            display: none; /* Показується тільки після входу */
-        }
-
-        .code-container {
-            margin-top: 15px;
-            background: #1e1e1e;
-            padding: 10px;
-            border-radius: 8px;
-        }
-
-        .code-editor {
-            width: 100%;
-            min-height: 120px;
-            background: transparent;
-            color: #9cdcfe;
-            border: none;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 14px;
-            resize: vertical;
-            outline: none;
-        }
-
-        .task-card.completed {
-            border-left: 10px solid #2ed573;
-            background-color: #f1fff1;
-        }
-
-        .action-btn {
-            margin-top: 15px;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.3s;
-        }
-
-        .done-btn { background-color: #2ed573; color: white; }
-        .undo-btn { background-color: #ffa502; color: white; }
-        
-        .badge {
-            font-size: 12px;
-            background: #e1e1e1;
-            padding: 2px 8px;
-            border-radius: 10px;
-            margin-left: 10px;
-        }
-    </style>
-</head>
+    <link rel="stylesheet" href="style.css"> </head>
 <body>
 
-    <div class="main-container">
+    <div id="auth-section">
+        <div class="login-box">
+            <h1>⚡ ScriptNode Login</h1>
+            <p>Увійдіть, щоб отримати доступ до місій</p>
+            <input type="text" id="login-username" placeholder="Ваш логін">
+            <input type="password" id="login-password" placeholder="Ваш пароль">
+            <button class="add-btn login-wide" onclick="handleLogin()">Увійти в Vault</button>
+        </div>
+    </div>
+
+    <div id="app-section">
         <div class="header-flex">
             <h1 class="main-title">⚡ ScriptNode Vault</h1>
             <button id="logout-btn" onclick="logout()">Вихід</button>
         </div>
 
-        <div class="form-container">
+        <div id="admin-panel" class="form-container">
             <h2>➕ Нова задача</h2>
             <div class="input-group">
                 <input type="text" id="task-title" placeholder="Назва місії...">
@@ -92,18 +36,12 @@
                 </select>
             </div>
             <textarea id="task-desc" placeholder="Умова задачі..." rows="2"></textarea>
-            <textarea id="task-explanation" placeholder="Приклади / Пояснення" rows="2"></textarea>
+            <textarea id="task-explanation" placeholder="Приклади / Пояснення / Підказки" rows="2"></textarea>
             <button class="add-btn" onclick="addTask()">Додати в базу</button>
         </div>
 
         <div class="controls">
             <input type="text" id="search-input" placeholder="🔍 Пошук місії..." oninput="filterTasks()">
-            <div class="filter-buttons">
-                <button class="filter-btn active" onclick="filterByCategory('Всі')">Всі</button>
-                <button class="filter-btn" onclick="filterByCategory('Основи')">Основи</button>
-                <button class="filter-btn" onclick="filterByCategory('Масиви')">Масиви</button>
-                <button class="filter-btn" onclick="filterByCategory('Об\'єкти')">Об'єкти</button>
-            </div>
         </div>
 
         <div id="task-list">
@@ -112,5 +50,12 @@
     </div>
 
     <script src="script.js"></script>
+    <script>
+        function handleLogin() {
+            const u = document.getElementById('login-username').value;
+            const p = document.getElementById('login-password').value;
+            if (typeof login === "function") login(u, p);
+        }
+    </script>
 </body>
 </html>
