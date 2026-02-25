@@ -190,3 +190,21 @@ input, textarea, select {
     border-left: 8px solid #4CAF50;
     background-color: #f0fff0;
 }
+.explanation-container {
+    background: #2d2d2d;
+    border-radius: 5px;
+    padding: 8px;
+    margin: 10px 0;
+    border-left: 4px solid #f1c40f;
+}
+.explanation-container summary {
+    cursor: pointer;
+    color: #f1c40f;
+    font-weight: bold;
+}
+.explanation-content {
+    margin-top: 8px;
+    color: #ddd;
+    font-size: 0.9em;
+    line-height: 1.4;
+}

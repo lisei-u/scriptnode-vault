@@ -5,13 +5,18 @@ let currentUser = JSON.parse(localStorage.getItem('user'));
 // 1. ПЕРЕВІРКА ПРИ ЗАВАНТАЖЕННІ
 window.onload = () => {
     if (!authToken) {
-        showLoginSection();
+        // Замість prompt краще показувати приховану форму входу
+        document.getElementById('auth-section').style.display = 'block';
+        document.getElementById('app-section').style.display = 'none';
     } else {
         initApp();
     }
 };
 
 function initApp() {
+    document.getElementById('auth-section').style.display = 'none';
+    document.getElementById('app-section').style.display = 'block';
+    
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) logoutBtn.style.display = 'block';
     
@@ -35,12 +40,12 @@ async function login(username, password) {
             currentUser = data.user;
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
-            location.reload(); 
+            initApp(); // Перемикаємо інтерфейс без перезавантаження
         } else {
-            alert('Помилка входу: ' + (data.error || 'Невірні дані'));
+            alert('❌ Помилка: ' + (data.error || 'Невірні дані'));
         }
     } catch (err) {
-        alert('Сервер недоступний. Перевірте, чи запущено node server.js');
+        alert('🌐 Сервер недоступний. Перевірте статус на Render.');
     }
 }
 
@@ -57,31 +62,27 @@ async function loadTasks() {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
 
-        if (res.status === 401) return logout(); // Якщо токен прострочений
+        if (res.status === 401) return logout();
 
         const tasks = await res.json();
-        
         if (Array.isArray(tasks)) {
             renderTasks(tasks);
-        } else {
-            console.error("Очікувався масив задач, але отримано:", tasks);
         }
     } catch (err) {
-        console.error("Критична помилка завантаження:", err);
-        document.getElementById('task-list').innerHTML = `<p style="color:red">Помилка сервера (500). Видаліть старого користувача в MongoDB і створіть нового.</p>`;
+        console.error("Помилка завантаження:", err);
     }
 }
 
-// 5. ДОДАВАННЯ НОВОЇ ЗАДАЧІ (Адмін)
+// 5. ДОДАВАННЯ ЗАДАЧІ (Адмін)
 async function addTask() {
     const taskData = {
         title: document.getElementById('task-title').value,
         category: document.getElementById('task-category').value,
         desc: document.getElementById('task-desc').value,
-        explanation: document.getElementById('task-explanation').value
+        explanation: document.getElementById('task-explanation').value // ПОЛЕ ПОЯСНЕННЯ
     };
 
-    if (!taskData.title) return alert("Вкажіть хоча б назву!");
+    if (!taskData.title || !taskData.desc) return alert("Заповніть назву та опис!");
 
     const res = await fetch(`${API_URL}/tasks`, {
         method: 'POST',
@@ -93,19 +94,20 @@ async function addTask() {
     });
 
     if (res.ok) {
-        alert('Задача додана!');
+        alert('✅ Задача успішно додана!');
+        // Очищуємо поля
+        ['task-title', 'task-category', 'task-desc', 'task-explanation'].forEach(id => document.getElementById(id).value = '');
         loadTasks();
     } else {
-        alert('Помилка створення. Перевірте права адміна.');
+        alert('🚫 Помилка створення. Перевірте права.');
     }
 }
 
-// 6. ТОГЛ СТАТУСУ ТА ЗБЕРЕЖЕННЯ КОДУ
+// 6. TOGGLE ТА ЗБЕРЕЖЕННЯ
 async function toggleTaskStatus(taskId) {
     const card = document.querySelector(`[data-id="${taskId}"]`);
     const isCompleted = card.classList.contains('completed');
     const codeValue = document.getElementById(`code-${taskId}`).value;
-
     const action = isCompleted ? 'uncomplete' : 'complete';
 
     try {
@@ -119,18 +121,14 @@ async function toggleTaskStatus(taskId) {
         });
 
         if (res.ok) {
-            // Замість повного перезавантаження loadTasks() можна просто оновити візуал
             loadTasks(); 
-        } else {
-            const errData = await res.json();
-            alert("Помилка: " + errData.error);
         }
     } catch (err) {
-        console.error("Помилка запиту:", err);
+        console.error("Помилка:", err);
     }
 }
 
-// 7. ВІДОБРАЖЕННЯ КАРТОК
+// 7. ВІДОБРАЖЕННЯ КАРТОК (З поясненням!)
 function renderTasks(tasks) {
     const list = document.getElementById('task-list');
     list.innerHTML = '';
@@ -140,15 +138,23 @@ function renderTasks(tasks) {
         card.setAttribute('data-id', task._id);
         card.className = `task-card ${task.isCompleted ? 'completed' : ''}`;
         
-        // Використовуємо task.desc або task.description (дивлячись що в базі)
-        const description = task.desc || task.description || "Опис відсутній";
-
         card.innerHTML = `
             <div class="task-header">
                 <h3>${task.title} <span class="badge">${task.category}</span></h3>
             </div>
             <div class="task-body">
-                <p>${description}</p>
+                <p class="task-desc">${task.desc}</p>
+                
+                ${task.explanation ? `
+                <div class="explanation-container">
+                    <details>
+                        <summary>💡 Підказка та пояснення</summary>
+                        <div class="explanation-content">
+                            ${task.explanation}
+                        </div>
+                    </details>
+                </div>` : ''}
+
                 <div class="code-container">
                     <textarea id="code-${task._id}" class="code-editor" 
                         placeholder="Напиши свій код тут...">${task.solution || ''}</textarea>
@@ -156,7 +162,7 @@ function renderTasks(tasks) {
             </div>
             <div class="task-actions">
                 <button class="action-btn" onclick="toggleTaskStatus('${task._id}')">
-                    ${task.isCompleted ? '↩️ Скасувати' : '✅ Виконати'}
+                    ${task.isCompleted ? '↩️ Скасувати' : '✅ Виконати та зберегти'}
                 </button>
             </div>
         `;
@@ -164,26 +170,9 @@ function renderTasks(tasks) {
     });
 }
 
-// 8. ДОПОМІЖНІ ФУНКЦІЇ
 function checkAdminUI() {
-    if (currentUser && currentUser.role !== 'admin') {
-        const form = document.querySelector('.form-container');
-        if (form) form.style.display = 'none';
+    const adminPanel = document.getElementById('admin-panel');
+    if (adminPanel) {
+        adminPanel.style.display = (currentUser && currentUser.role === 'admin') ? 'block' : 'none';
     }
-}
-
-function showLoginSection() {
-    const user = prompt("Вхід: Логін (Admin або PlayerOne)");
-    const pass = prompt("Пароль");
-    if (user && pass) login(user, pass);
-}
-
-// Пошук
-function filterTasks() {
-    const query = document.getElementById('search-input').value.toLowerCase();
-    const cards = document.querySelectorAll('.task-card');
-    cards.forEach(card => {
-        const title = card.querySelector('h3').innerText.toLowerCase();
-        card.style.display = title.includes(query) ? 'block' : 'none';
-    });
 }
