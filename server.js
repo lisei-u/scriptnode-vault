@@ -6,23 +6,30 @@ const jwt = require('jsonwebtoken');
 const cors = require('cors');
 
 const app = express();
-require('dotenv').config();
+
+// --- НАЛАШТУВАННЯ ---
 const MONGO_URI = process.env.MONGODB_URI;
 const JWT_SECRET = process.env.JWT_SECRET;
-// --- НАЛАШТУВАННЯ ---
+const PORT = process.env.PORT || 3000;
+
 app.use(express.json());
+
+// Налаштування CORS - важливо, щоб це було ПЕРЕД маршрутами
 app.use(cors({
-    origin: 'https://lisei-u.github.io', // Твій домен на GitHub Pages
+    origin: ['https://lisei-u.github.io', 'http://127.0.0.1:5500'], // Додав локалку для тестів
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-
 // --- ПІДКЛЮЧЕННЯ ДО БД ---
-// Заміни <password> та <dbname> на свої дані з MongoDB Atlas
+if (!MONGO_URI) {
+    console.error("❌ Помилка: MONGO_URI не знайдено!");
+    process.exit(1);
+}
+
 mongoose.connect(MONGO_URI)
-    .then(() => console.log('✅ База даних підключена'))
-    .catch(err => console.error('❌ Помилка підключення до БД:', err));
+    .then(() => console.log('✅ Connected to MongoDB Atlas'))
+    .catch(err => console.error('❌ MongoDB connection error:', err));
 
 // --- МОДЕЛІ ---
 const taskSchema = new mongoose.Schema({
@@ -38,7 +45,6 @@ const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, default: 'user' },
-    // Тут ми зберігаємо прогрес: ID задачі + написаний код
     completedTasks: [{
         taskId: { type: mongoose.Schema.Types.ObjectId, ref: 'Task' },
         solution: String
@@ -49,9 +55,13 @@ const User = mongoose.model('User', userSchema);
 // --- MIDDLEWARE ---
 const auth = async (req, res, next) => {
     try {
-        const token = req.header('Authorization').replace('Bearer ', '');
+        const authHeader = req.header('Authorization');
+        if (!authHeader) throw new Error();
+        
+        const token = authHeader.replace('Bearer ', '');
         const decoded = jwt.verify(token, JWT_SECRET);
         const user = await User.findById(decoded.id);
+        
         if (!user) throw new Error();
         req.user = user;
         next();
@@ -69,7 +79,7 @@ app.post('/register', async (req, res) => {
         await user.save();
         res.status(201).send({ message: "Успішна реєстрація" });
     } catch (e) {
-        res.status(400).send({ error: "Цей логін вже зайнятий" });
+        res.status(400).send({ error: "Цей логін вже зайнятий або дані невірні" });
     }
 });
 
@@ -87,8 +97,6 @@ app.post('/login', async (req, res) => {
 });
 
 // --- МАРШРУТИ ЗАДАЧ ---
-
-// 1. Отримати всі задачі (з відмітками про виконання та кодом)
 app.get('/tasks', auth, async (req, res) => {
     try {
         const tasks = await Task.find({}).lean();
@@ -99,7 +107,7 @@ app.get('/tasks', auth, async (req, res) => {
             return {
                 ...task,
                 isCompleted: !!userTask,
-                solution: userTask ? userTask.solution : "" // Віддаємо збережений код на фронтенд
+                solution: userTask ? userTask.solution : ""
             };
         });
 
@@ -109,7 +117,6 @@ app.get('/tasks', auth, async (req, res) => {
     }
 });
 
-// 2. Створити задачу (тільки Адмін)
 app.post('/tasks', auth, async (req, res) => {
     if (req.user.role !== 'admin') return res.status(403).send({ error: 'Немає прав адміна' });
     try {
@@ -121,20 +128,16 @@ app.post('/tasks', auth, async (req, res) => {
     }
 });
 
-// 3. Відмітити як виконану + зберегти код
 app.post('/tasks/:id/complete', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
         const { solution } = req.body;
         const taskId = req.params.id;
-
         const taskIndex = user.completedTasks.findIndex(t => t.taskId && t.taskId.toString() === taskId);
 
         if (taskIndex > -1) {
-            // Оновлюємо існуючий код
             user.completedTasks[taskIndex].solution = solution;
         } else {
-            // Додаємо новий запис
             user.completedTasks.push({ taskId, solution });
         }
 
@@ -145,7 +148,6 @@ app.post('/tasks/:id/complete', auth, async (req, res) => {
     }
 });
 
-// 4. Скасувати виконання
 app.post('/tasks/:id/uncomplete', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
@@ -158,14 +160,6 @@ app.post('/tasks/:id/uncomplete', auth, async (req, res) => {
 });
 
 // --- ЗАПУСК ---
-// Заміни запуск сервера в самому низу:
-const PORT = process.env.PORT || 3000; 
 app.listen(PORT, () => {
     console.log(`🚀 Сервер працює на порту ${PORT}`);
 });
-
-// Заміни підключення до БД на це:
-const mongoURI = process.env.MONGODB_URI || 'твій_локальний_url_якщо_є';
-mongoose.connect(mongoURI)
-    .then(() => console.log('✅ Connected to MongoDB Atlas'))
-    .catch(err => console.error('❌ MongoDB error:', err));
