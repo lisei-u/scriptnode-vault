@@ -16,15 +16,15 @@ function initApp() {
     document.getElementById('auth-section').style.display = 'none';
     document.getElementById('app-section').style.display = 'block';
     
-    const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) logoutBtn.style.display = 'block';
-    
     checkAdminUI();
     loadTasks();
 }
 
 // 2. ЛОГІКА ВХОДУ (LOGIN)
-async function login(username, password) {
+// Додаємо login у вікно, щоб HTML точно його бачив
+window.login = async function(username, password) {
+    if (!username || !password) return alert('Заповніть всі поля!');
+    
     try {
         const res = await fetch(`${API_URL}/login`, {
             method: 'POST',
@@ -41,18 +41,18 @@ async function login(username, password) {
             localStorage.setItem('user', JSON.stringify(data.user));
             initApp();
         } else {
-            alert('❌ Помилка: ' + (data.error || 'Невірні дані'));
+            alert('❌ ' + (data.error || 'Невірні дані'));
         }
     } catch (err) {
         alert('🌐 Сервер недоступний. Перевірте статус на Render.');
     }
-}
+};
 
 // 3. ВИХІД (LOGOUT)
-function logout() {
+window.logout = function() {
     localStorage.clear();
     location.reload();
-}
+};
 
 // 4. ЗАВАНТАЖЕННЯ ЗАДАЧ
 async function loadTasks() {
@@ -73,36 +73,40 @@ async function loadTasks() {
 }
 
 // 5. ДОДАВАННЯ ЗАДАЧІ (Адмін)
-async function addTask() {
+window.addTask = async function() {
     const taskData = {
         title: document.getElementById('task-title').value.trim(),
         category: document.getElementById('task-category').value,
         desc: document.getElementById('task-desc').value.trim(),
-        explanation: document.getElementById('task-explanation').value.trim() // trim() прибирає зайві пробіли
+        explanation: document.getElementById('task-explanation').value.trim()
     };
 
     if (!taskData.title || !taskData.desc) return alert("Заповніть назву та опис!");
 
-    const res = await fetch(`${API_URL}/tasks`, {
-        method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`
-        },
-        body: JSON.stringify(taskData)
-    });
+    try {
+        const res = await fetch(`${API_URL}/tasks`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(taskData)
+        });
 
-    if (res.ok) {
-        alert('✅ Задача успішно додана!');
-        ['task-title', 'task-desc', 'task-explanation'].forEach(id => document.getElementById(id).value = '');
-        loadTasks();
-    } else {
-        alert('🚫 Помилка створення. Перевірте права.');
-    }
-}
+        if (res.ok) {
+            alert('✅ Задача додана!');
+            document.getElementById('task-title').value = '';
+            document.getElementById('task-desc').value = '';
+            document.getElementById('task-explanation').value = '';
+            loadTasks();
+        } else {
+            alert('🚫 Помилка створення. Перевірте права.');
+        }
+    } catch (e) { alert("Помилка зв'язку з сервером"); }
+};
 
 // 6. TOGGLE ТА ЗБЕРЕЖЕННЯ
-async function toggleTaskStatus(taskId) {
+window.toggleTaskStatus = async function(taskId) {
     const card = document.querySelector(`[data-id="${taskId}"]`);
     const isCompleted = card.classList.contains('completed');
     const codeValue = document.getElementById(`code-${taskId}`).value;
@@ -118,13 +122,9 @@ async function toggleTaskStatus(taskId) {
             body: JSON.stringify({ solution: codeValue })
         });
 
-        if (res.ok) {
-            loadTasks(); 
-        }
-    } catch (err) {
-        console.error("Помилка:", err);
-    }
-}
+        if (res.ok) loadTasks();
+    } catch (err) { console.error("Помилка:", err); }
+};
 
 // 7. ВІДОБРАЖЕННЯ КАРТОК
 function renderTasks(tasks) {
@@ -142,15 +142,13 @@ function renderTasks(tasks) {
             </div>
             <div class="task-body">
                 <p class="task-desc">${task.desc}</p>
-                
                 ${task.explanation ? `
                 <div class="explanation-container">
                     <details>
-                        <summary>💡 Підказка та пояснення</summary>
-                        <div class="explanation-content">${task.explanation.trim()}</div>
+                        <summary>💡 Підказка</summary>
+                        <div class="explanation-content">${task.explanation}</div>
                     </details>
                 </div>` : ''}
-
                 <div class="code-container">
                     <textarea id="code-${task._id}" class="code-editor" 
                         placeholder="Напиши свій код тут...">${task.solution || ''}</textarea>
@@ -166,7 +164,6 @@ function renderTasks(tasks) {
     });
 }
 
-// 8. ДОПОМІЖНІ ФУНКЦІЇ
 function checkAdminUI() {
     const adminPanel = document.getElementById('admin-panel');
     if (adminPanel) {
@@ -174,17 +171,13 @@ function checkAdminUI() {
     }
 }
 
-// Функція пошуку (додай цей блок)
-function filterTasks() {
+// 8. ФІЛЬТР
+window.filterTasks = function() {
     const query = document.getElementById('search-input').value.toLowerCase();
     const cards = document.querySelectorAll('.task-card');
     cards.forEach(card => {
         const title = card.querySelector('h3').innerText.toLowerCase();
         const category = card.querySelector('.badge').innerText.toLowerCase();
-        if (title.includes(query) || category.includes(query)) {
-            card.style.display = 'block';
-        } else {
-            card.style.display = 'none';
-        }
+        card.style.display = (title.includes(query) || category.includes(query)) ? 'block' : 'none';
     });
-}
+};
