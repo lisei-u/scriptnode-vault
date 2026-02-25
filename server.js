@@ -37,7 +37,8 @@ const taskSchema = new mongoose.Schema({
     category: String,
     desc: String,
     explanation: String,
-    difficulty: Number
+    difficulty: Number,
+    expectedValue: String // Додаємо це поле
 });
 const Task = mongoose.model('Task', taskSchema);
 
