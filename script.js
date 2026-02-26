@@ -62,33 +62,48 @@ async function loadTasks() {
 async function toggleTaskStatus(taskId) {
     const task = allTasks.find(t => t._id === taskId);
     const codeValue = document.getElementById(`code-${taskId}`).value;
-    const isCompleted = document.querySelector(`[data-id="${taskId}"]`).classList.contains('completed');
+    const card = document.querySelector(`[data-id="${taskId}"]`);
 
-    if (isCompleted) {
+    if (card.classList.contains('completed')) {
         await sendStatus(taskId, 'uncomplete', codeValue);
         return;
     }
 
-    if (task.expectedValue) {
-        try {
-            const userFunc = new Function(codeValue);
-            const userResult = userFunc();
-            
-            let expected;
-            try { expected = JSON.parse(task.expectedValue); } 
-            catch { expected = task.expectedValue; }
+    try {
+        // 1. Шукаємо назву функції в коді користувача (напр. function myFunc)
+        const funcNameMatch = codeValue.match(/function\s+([a-zA-Z0-9_]+)/);
+        if (!funcNameMatch) {
+            throw new Error("Ви не оголосили функцію через 'function назва()'");
+        }
+        const funcName = funcNameMatch[1];
 
-            if (JSON.stringify(userResult) === JSON.stringify(expected)) {
-                alert(`🚀 Вірно!`);
-                await sendStatus(taskId, 'complete', codeValue);
-            } else {
-                alert(`❌ Невірно.\nОтримано: ${JSON.stringify(userResult)}\nОчікували: ${JSON.stringify(expected)}`);
-            }
-        } catch (e) { alert("⚠️ Помилка в коді: " + e.message); }
-    } else {
-        await sendStatus(taskId, 'complete', codeValue);
+        // 2. Готуємо код до виконання
+        // Додаємо виклик функції з твоїми аргументами з БД
+        const fullCode = `
+            ${codeValue}
+            return ${funcName}(${task.testArgs || ''});
+        `;
+
+        // 3. Запускаємо "пісочницю"
+        const runner = new Function(fullCode);
+        const userResult = runner();
+
+        // 4. Парсимо очікуваний результат (якщо це масив/об'єкт)
+        let expected;
+        try { expected = JSON.parse(task.expectedValue); } 
+        catch { expected = task.expectedValue; }
+
+        // 5. Порівнюємо
+        if (JSON.stringify(userResult) === JSON.stringify(expected)) {
+            alert(`🚀 ГЕНІАЛЬНО! Результат: ${JSON.stringify(userResult)}`);
+            await sendStatus(taskId, 'complete', codeValue);
+        } else {
+            alert(`❌ Спробуй ще раз.\nТвоя функція повернула: ${JSON.stringify(userResult)}\nОчікували: ${JSON.stringify(expected)}`);
+        }
+    } catch (e) {
+        alert("⚠️ Помилка у коді:\n" + e.message);
     }
-}
+};
 
 async function sendStatus(taskId, action, solution) {
     await fetch(`${API_URL}/tasks/${taskId}/${action}`, {
@@ -108,6 +123,7 @@ async function addTask() {
         category: document.getElementById('task-category').value,
         desc: document.getElementById('task-desc').value,
         explanation: document.getElementById('task-explanation').value,
+        testArgs: document.getElementById('task-test-args').value, // НОВЕ ПОЛЕ
         expectedValue: document.getElementById('task-expected').value
     };
 
@@ -121,8 +137,8 @@ async function addTask() {
     });
 
     if (res.ok) {
-        alert("Місія додана!");
-        loadTasks();
+        alert("Місія додана успішно!");
+        location.reload(); 
     }
 }
 

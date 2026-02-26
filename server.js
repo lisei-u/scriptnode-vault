@@ -38,7 +38,8 @@ const taskSchema = new mongoose.Schema({
     desc: String,
     explanation: String,
     difficulty: Number,
-    expectedValue: String // Додаємо це поле
+    testArgs: String,
+    expectedValue: String 
 });
 const Task = mongoose.model('Task', taskSchema);
 

@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="uk">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JS Task Tracker Pro | Vault</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
     <div id="auth-section">
@@ -37,9 +39,17 @@
                 </select>
             </div>
             <textarea id="task-desc" placeholder="Умова задачі..." rows="2"></textarea>
-            <textarea id="task-explanation" placeholder="Підказка або пояснення (необов'язково)" rows="2"></textarea>
-            <input type="text" id="task-expected" placeholder="Очікувана відповідь (напр. 10 або [1,2,3])" style="margin-top: 10px; width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #444; background: #222; color: white;">
-            <button class="add-btn" style="margin-top:10px;" onclick="addTask()">Додати в базу</button>
+            <textarea id="task-explanation" placeholder="Початковий код (напр. function sum(a,b) { })"
+                rows="2"></textarea>
+
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <input type="text" id="task-test-args" placeholder="Аргументи тесту (напр. 5, 10)"
+                    style="flex: 1; padding: 10px; border-radius: 4px; border: 1px solid #444; background: #222; color: white;">
+                <input type="text" id="task-expected" placeholder="Очікуваний результат (напр. 15)"
+                    style="flex: 1; padding: 10px; border-radius: 4px; border: 1px solid #444; background: #222; color: white;">
+            </div>
+
+            <button class="add-btn" style="margin-top:15px; width: 100%;" onclick="addTask()">Додати в базу</button>
         </div>
 
         <div class="controls">
@@ -68,4 +78,5 @@
         }
     </script>
 </body>
+
 </html>
