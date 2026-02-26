@@ -65,43 +65,63 @@ async function toggleTaskStatus(taskId) {
     const statusDiv = document.getElementById(`status-${taskId}`);
     const card = document.querySelector(`[data-id="${taskId}"]`);
 
-    // Очищуємо старі повідомлення
+    statusDiv.style.display = "block";
     statusDiv.className = "status-message";
-    statusDiv.innerHTML = "";
+    statusDiv.innerHTML = "⏳ Тестування...";
 
     if (card.classList.contains('completed')) {
         await sendStatus(taskId, 'uncomplete', codeValue);
+        statusDiv.style.display = "none";
         return;
     }
 
     try {
         const funcNameMatch = codeValue.match(/function\s+([a-zA-Z0-9_]+)/);
         if (!funcNameMatch) throw new Error("Ви не оголосили функцію через 'function назва()'");
-
         const funcName = funcNameMatch[1];
-        const fullCode = `${codeValue}\nreturn ${funcName}(${task.testArgs || ''});`;
 
-        const runner = new Function(fullCode);
-        const userResult = runner();
+        // РОЗДІЛЯЄМО ТЕСТИ (використовуємо ";" як роздільник)
+        const testInputs = task.testArgs.split(';').map(s => s.trim());
+        const expectedOutputs = task.expectedValue.split(';').map(s => s.trim());
 
-        let expected;
-        try { expected = JSON.parse(task.expectedValue); } 
-        catch { expected = task.expectedValue; }
+        let passedCount = 0;
+        let errorDetail = "";
 
-        if (JSON.stringify(userResult) === JSON.stringify(expected)) {
-            // УСПІХ
-            statusDiv.classList.add('success');
-            statusDiv.innerHTML = `🚀 ГЕНІАЛЬНО! Результат: ${JSON.stringify(userResult)}`;
+        for (let i = 0; i < testInputs.length; i++) {
+            const currentInput = testInputs[i];
+            const currentExpectedRaw = expectedOutputs[i];
+
+            // Динамічне виконання для кожного тесту
+            const fullCode = `${codeValue}\nreturn ${funcName}(${currentInput});`;
+            const runner = new Function(fullCode);
+            const userResult = runner();
+
+            // Парсимо очікуване значення
+            let expected;
+            try { expected = JSON.parse(currentExpectedRaw); } 
+            catch { expected = currentExpectedRaw; }
+
+            // Порівняння
+            if (JSON.stringify(userResult) === JSON.stringify(expected)) {
+                passedCount++;
+            } else {
+                errorDetail = `❌ Тест №${i+1} провалено!<br>Аргументи: <code>(${currentInput})</code><br>Очікували: <b>${JSON.stringify(expected)}</b><br>Отримано: <b style="color:#ff4136">${JSON.stringify(userResult)}</b>`;
+                break; // Зупиняємося на першій помилці
+            }
+        }
+
+        if (passedCount === testInputs.length) {
+            statusDiv.className = "status-message success";
+            statusDiv.innerHTML = `🚀 ГЕНІАЛЬНО! Всі тести (${passedCount}/${testInputs.length}) пройдено.`;
             await sendStatus(taskId, 'complete', codeValue);
         } else {
-            // ПОМИЛКА РЕЗУЛЬТАТУ
-            statusDiv.classList.add('error');
-            statusDiv.innerHTML = `❌ Спробуй ще раз.<br>Отримано: <b>${JSON.stringify(userResult)}</b><br>Очікували: <b>${JSON.stringify(expected)}</b>`;
+            statusDiv.className = "status-message error";
+            statusDiv.innerHTML = errorDetail;
         }
+
     } catch (e) {
-        // ПОМИЛКА КОДУ
-        statusDiv.classList.add('error');
-        statusDiv.innerHTML = `⚠️ Помилка у коді:<br>${e.message}`;
+        statusDiv.className = "status-message error";
+        statusDiv.innerHTML = `⚠️ Помилка виконання:<br>${e.message}`;
     }
 };
 
