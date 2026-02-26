@@ -18,7 +18,7 @@
         </div>
     </div>
 
-    <div id="app-section" style="display:none">
+    <div id="app-section">
         <div class="header-flex">
             <h1 class="main-title">⚡ ScriptNode Vault</h1>
             <button id="logout-btn" onclick="logout()">Вихід</button>
@@ -37,8 +37,8 @@
                 </select>
             </div>
             <textarea id="task-desc" placeholder="Умова задачі..." rows="2"></textarea>
-            <textarea id="task-explanation" placeholder="Приклади / Пояснення / Підказки" rows="2"></textarea>
-            <input type="text" id="task-expected" placeholder="Очікувана відповідь (напр. 10 або [1,2,3])" style="margin-top: 10px; width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #222; color: white;">
+            <textarea id="task-explanation" placeholder="Підказка або пояснення (необов'язково)" rows="2"></textarea>
+            <input type="text" id="task-expected" placeholder="Очікувана відповідь (напр. 10 або [1,2,3])" style="margin-top: 10px; width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #444; background: #222; color: white;">
             <button class="add-btn" style="margin-top:10px;" onclick="addTask()">Додати в базу</button>
         </div>
 
@@ -47,16 +47,24 @@
         </div>
 
         <div id="task-list">
-            <p style="text-align: center; color: #888;">Завантаження місій...</p>
+            <div class="loader-box" style="text-align: center; padding: 50px;">
+                <p style="color: #ffcc00; font-size: 1.2em;">📡 Підключення до Vault...</p>
+                <p style="color: #666; font-size: 0.9em;">(Якщо сервер спить, це може зайняти до 1 хвилини)</p>
+            </div>
         </div>
     </div>
 
     <script src="script.js"></script>
     <script>
+        // Проксі-функція для гарантованого виклику
         function handleLogin() {
             const u = document.getElementById('login-username').value;
             const p = document.getElementById('login-password').value;
-            if (typeof login === "function") login(u, p);
+            if (window.login) {
+                window.login(u, p);
+            } else {
+                alert("Помилка: Скрипт ще завантажується");
+            }
         }
     </script>
 </body>

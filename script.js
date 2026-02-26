@@ -3,14 +3,21 @@ let authToken = localStorage.getItem('token');
 let currentUser = JSON.parse(localStorage.getItem('user'));
 let allTasks = [];
 
-// Прив'язуємо функції до window, щоб HTML їх бачив
+// Експортуємо функції для HTML
 window.login = login;
 window.logout = logout;
 window.addTask = addTask;
 window.filterTasks = filterTasks;
+window.toggleTaskStatus = toggleTaskStatus;
 
 window.onload = () => {
-    if (authToken) initApp();
+    if (authToken) {
+        initApp();
+    } else {
+        // Якщо не авторизовані, ховаємо додаток і показуємо вхід
+        document.getElementById('app-section').style.display = 'none';
+        document.getElementById('auth-section').style.display = 'block';
+    }
 };
 
 async function login(username, password) {
@@ -26,7 +33,7 @@ async function login(username, password) {
             localStorage.setItem('user', JSON.stringify(data.user));
             location.reload();
         } else alert(data.error);
-    } catch (e) { alert("Сервер не відповідає"); }
+    } catch (e) { alert("Сервер не відповідає. Спробуйте через хвилину."); }
 }
 
 function initApp() {
@@ -43,51 +50,45 @@ async function loadTasks() {
         const res = await fetch(`${API_URL}/tasks`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
         });
+        if (!res.ok) throw new Error("Помилка авторизації");
         allTasks = await res.json();
         renderTasks(allTasks);
-    } catch (e) { console.error("Помилка завантаження:", e); }
+    } catch (e) { 
+        console.error("Помилка:", e);
+        document.getElementById('task-list').innerHTML = `<p style="color:red; text-align:center;">Помилка завантаження. Перевірте з'єднання.</p>`;
+    }
 }
 
-window.toggleTaskStatus = async function(taskId) {
+async function toggleTaskStatus(taskId) {
     const task = allTasks.find(t => t._id === taskId);
     const codeValue = document.getElementById(`code-${taskId}`).value;
-    const card = document.querySelector(`[data-id="${taskId}"]`);
-    const isCompleted = card.classList.contains('completed');
+    const isCompleted = document.querySelector(`[data-id="${taskId}"]`).classList.contains('completed');
 
-    // ПРАВКА: Якщо задача вже виконана — просто скасовуємо її
     if (isCompleted) {
         await sendStatus(taskId, 'uncomplete', codeValue);
         return;
     }
 
-    // Якщо є перевірка — запускаємо тест
     if (task.expectedValue) {
         try {
             const userFunc = new Function(codeValue);
             const userResult = userFunc();
             
-            let expectedParsed;
-            try {
-                expectedParsed = JSON.parse(task.expectedValue);
-            } catch (e) {
-                expectedParsed = task.expectedValue;
-            }
+            let expected;
+            try { expected = JSON.parse(task.expectedValue); } 
+            catch { expected = task.expectedValue; }
 
-            if (JSON.stringify(userResult) === JSON.stringify(expectedParsed)) {
-                alert(`🚀 Вірно! Результат: ${JSON.stringify(userResult)}`);
+            if (JSON.stringify(userResult) === JSON.stringify(expected)) {
+                alert(`🚀 Вірно!`);
                 await sendStatus(taskId, 'complete', codeValue);
             } else {
-                alert(`❌ Невірно.\nОтримано: ${JSON.stringify(userResult)}\nОчікували: ${JSON.stringify(expectedParsed)}`);
-                return; 
+                alert(`❌ Невірно.\nОтримано: ${JSON.stringify(userResult)}\nОчікували: ${JSON.stringify(expected)}`);
             }
-        } catch (e) {
-            alert("⚠️ Помилка у твоєму коді: " + e.message);
-            return;
-        }
+        } catch (e) { alert("⚠️ Помилка в коді: " + e.message); }
     } else {
         await sendStatus(taskId, 'complete', codeValue);
     }
-};
+}
 
 async function sendStatus(taskId, action, solution) {
     await fetch(`${API_URL}/tasks/${taskId}/${action}`, {
@@ -135,7 +136,19 @@ function renderTasks(tasks) {
         card.innerHTML = `
             <h3>${task.title} <span class="badge">${task.category}</span></h3>
             <p>${task.desc}</p>
+            
+            ${task.explanation ? `
+                <details style="margin-bottom: 10px; cursor: pointer; color: #ffcc00;">
+                    <summary>💡 Підказка</summary>
+                    <div style="padding: 10px; background: #222; border-radius: 4px; margin-top: 5px; color: #ccc;">
+                        ${task.explanation}
+                    </div>
+                </details>
+            ` : ''}
+
+            <div style="font-size: 0.8em; color: #888; margin-bottom: 5px;">⚠️ Використовуйте <code>return</code> для результату</div>
             <textarea id="code-${task._id}" class="code-editor" placeholder="return ...">${task.solution || ''}</textarea>
+            
             <button class="action-btn" onclick="toggleTaskStatus('${task._id}')">
                 ${task.isCompleted ? '↩️ Скасувати' : '✅ Перевірити та зберегти'}
             </button>
@@ -152,7 +165,6 @@ function logout() {
 function filterTasks() {
     const q = document.getElementById('search-input').value.toLowerCase();
     document.querySelectorAll('.task-card').forEach(card => {
-        const txt = card.innerText.toLowerCase();
-        card.style.display = txt.includes(q) ? 'block' : 'none';
+        card.style.display = card.innerText.toLowerCase().includes(q) ? 'block' : 'none';
     });
 }
