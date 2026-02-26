@@ -63,6 +63,7 @@ async function toggleTaskStatus(taskId) {
     const task = allTasks.find(t => t._id === taskId);
     const codeValue = document.getElementById(`code-${taskId}`).value;
     const card = document.querySelector(`[data-id="${taskId}"]`);
+    console.log("Тестуємо задачу:", task.title, "Аргументи:", task.testArgs);
 
     if (card.classList.contains('completed')) {
         await sendStatus(taskId, 'uncomplete', codeValue);
