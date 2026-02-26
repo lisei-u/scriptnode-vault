@@ -166,6 +166,8 @@ function renderTasks(tasks) {
             </button>
         `;
         list.appendChild(card);
+        const textarea = document.getElementById(`code-${task._id}`);
+        setupCodeEditor(textarea);
     });
 }
 
@@ -178,5 +180,47 @@ function filterTasks() {
     const q = document.getElementById('search-input').value.toLowerCase();
     document.querySelectorAll('.task-card').forEach(card => {
         card.style.display = card.innerText.toLowerCase().includes(q) ? 'block' : 'none';
+    });
+}
+
+function setupCodeEditor(el) {
+    el.addEventListener('keydown', function(e) {
+        const start = this.selectionStart;
+        const end = this.selectionEnd;
+        const value = this.value;
+        const selectedText = value.substring(start, end);
+
+        // 1. Відступ клавішею Tab
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            this.value = value.substring(0, start) + "    " + value.substring(end);
+            this.selectionStart = this.selectionEnd = start + 4;
+        }
+
+        // 2. Автозакриття та Огортання (Дужки та Лапки)
+        const pairs = {
+            '(': ')',
+            '[': ']',
+            '{': '}',
+            '"': '"',
+            "'": "'",
+            '`': '`'
+        };
+
+        if (pairs[e.key]) {
+            e.preventDefault();
+            const closingChar = pairs[e.key];
+            
+            // Якщо текст виділено - огортаємо його
+            if (start !== end) {
+                this.value = value.substring(0, start) + e.key + selectedText + closingChar + value.substring(end);
+                this.selectionStart = start + 1;
+                this.selectionEnd = end + 1;
+            } else {
+                // Якщо просто натиснули - ставимо пару і курсор посередині
+                this.value = value.substring(0, start) + e.key + closingChar + value.substring(end);
+                this.selectionStart = this.selectionEnd = start + 1;
+            }
+        }
     });
 }
