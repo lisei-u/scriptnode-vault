@@ -149,21 +149,16 @@ function renderTasks(tasks) {
         const card = document.createElement('div');
         card.setAttribute('data-id', task._id);
         card.className = `task-card ${task.isCompleted ? 'completed' : ''}`;
+        
+        // Вибираємо, що показати: розв'язок користувача АБО твій початковий код
+        const initialContent = task.solution || task.explanation || '';
+
         card.innerHTML = `
             <h3>${task.title} <span class="badge">${task.category}</span></h3>
             <p>${task.desc}</p>
             
-            ${task.explanation ? `
-                <details style="margin-bottom: 10px; cursor: pointer; color: #ffcc00;">
-                    <summary>💡 Підказка</summary>
-                    <div style="padding: 10px; background: #222; border-radius: 4px; margin-top: 5px; color: #ccc;">
-                        ${task.explanation}
-                    </div>
-                </details>
-            ` : ''}
-
-            <div style="font-size: 0.8em; color: #888; margin-bottom: 5px;">⚠️ Використовуйте <code>return</code> для результату</div>
-            <textarea id="code-${task._id}" class="code-editor" placeholder="return ...">${task.solution || ''}</textarea>
+            <textarea id="code-${task._id}" class="code-editor" 
+                      placeholder="Напишіть вашу функцію тут...">${initialContent}</textarea>
             
             <button class="action-btn" onclick="toggleTaskStatus('${task._id}')">
                 ${task.isCompleted ? '↩️ Скасувати' : '✅ Перевірити та зберегти'}

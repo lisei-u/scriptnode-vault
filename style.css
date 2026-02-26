@@ -161,14 +161,27 @@ input, textarea, select {
 
 .code-editor {
     width: 100%;
-    min-height: 150px;
-    background: transparent;
-    color: #dcdcdc;
-    border: none;
-    font-family: 'Consolas', 'Courier New', monospace;
+    min-height: 120px;
+    background-color: #0d0d0d !important; /* Глибокий чорний */
+    color: #00ff41 !important;           /* Яскравий зелений */
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
     font-size: 14px;
-    resize: vertical;
+    line-height: 1.5;
+    padding: 12px;
+    border: 1px solid #333;
+    border-radius: 6px;
     outline: none;
+    resize: vertical;
+    margin-bottom: 15px;
+}
+.code-editor:focus {
+    border-color: #00ff41;
+    box-shadow: 0 0 8px rgba(0, 255, 65, 0.2);
+}
+
+/* Колір плейсхолдера (підказки всередині) */
+.code-editor::placeholder {
+    color: #004411;
 }
 
 /* 7. ДОПОМІЖНІ ЕЛЕМЕНТИ */
