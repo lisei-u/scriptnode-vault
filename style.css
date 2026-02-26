@@ -195,3 +195,31 @@ input, textarea, select {
 }
 
 .controls { margin-bottom: 20px; }
+
+.status-message {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    display: none; /* Ховаємо, поки порожньо */
+    line-height: 1.4;
+}
+
+.status-message.success {
+    display: block;
+    background: rgba(0, 255, 65, 0.1);
+    border: 1px solid #00ff41;
+    color: #00ff41;
+}
+
+.status-message.error {
+    display: block;
+    background: rgba(255, 65, 54, 0.1);
+    border: 1px solid #ff4136;
+    color: #ff4136;
+}
+
+/* Додамо трохи стилю для b в помилках */
+.status-message b {
+    text-decoration: underline;
+}

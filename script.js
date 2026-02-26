@@ -62,8 +62,12 @@ async function loadTasks() {
 async function toggleTaskStatus(taskId) {
     const task = allTasks.find(t => t._id === taskId);
     const codeValue = document.getElementById(`code-${taskId}`).value;
+    const statusDiv = document.getElementById(`status-${taskId}`);
     const card = document.querySelector(`[data-id="${taskId}"]`);
-    console.log("Тестуємо задачу:", task.title, "Аргументи:", task.testArgs);
+
+    // Очищуємо старі повідомлення
+    statusDiv.className = "status-message";
+    statusDiv.innerHTML = "";
 
     if (card.classList.contains('completed')) {
         await sendStatus(taskId, 'uncomplete', codeValue);
@@ -71,38 +75,33 @@ async function toggleTaskStatus(taskId) {
     }
 
     try {
-        // 1. Шукаємо назву функції в коді користувача (напр. function myFunc)
         const funcNameMatch = codeValue.match(/function\s+([a-zA-Z0-9_]+)/);
-        if (!funcNameMatch) {
-            throw new Error("Ви не оголосили функцію через 'function назва()'");
-        }
+        if (!funcNameMatch) throw new Error("Ви не оголосили функцію через 'function назва()'");
+
         const funcName = funcNameMatch[1];
+        const fullCode = `${codeValue}\nreturn ${funcName}(${task.testArgs || ''});`;
 
-        // 2. Готуємо код до виконання
-        // Додаємо виклик функції з твоїми аргументами з БД
-        const fullCode = `
-            ${codeValue}
-            return ${funcName}(${task.testArgs || ''});
-        `;
-
-        // 3. Запускаємо "пісочницю"
         const runner = new Function(fullCode);
         const userResult = runner();
 
-        // 4. Парсимо очікуваний результат (якщо це масив/об'єкт)
         let expected;
         try { expected = JSON.parse(task.expectedValue); } 
         catch { expected = task.expectedValue; }
 
-        // 5. Порівнюємо
         if (JSON.stringify(userResult) === JSON.stringify(expected)) {
-            alert(`🚀 ГЕНІАЛЬНО! Результат: ${JSON.stringify(userResult)}`);
+            // УСПІХ
+            statusDiv.classList.add('success');
+            statusDiv.innerHTML = `🚀 ГЕНІАЛЬНО! Результат: ${JSON.stringify(userResult)}`;
             await sendStatus(taskId, 'complete', codeValue);
         } else {
-            alert(`❌ Спробуй ще раз.\nТвоя функція повернула: ${JSON.stringify(userResult)}\nОчікували: ${JSON.stringify(expected)}`);
+            // ПОМИЛКА РЕЗУЛЬТАТУ
+            statusDiv.classList.add('error');
+            statusDiv.innerHTML = `❌ Спробуй ще раз.<br>Отримано: <b>${JSON.stringify(userResult)}</b><br>Очікували: <b>${JSON.stringify(expected)}</b>`;
         }
     } catch (e) {
-        alert("⚠️ Помилка у коді:\n" + e.message);
+        // ПОМИЛКА КОДУ
+        statusDiv.classList.add('error');
+        statusDiv.innerHTML = `⚠️ Помилка у коді:<br>${e.message}`;
     }
 };
 
@@ -151,7 +150,6 @@ function renderTasks(tasks) {
         card.setAttribute('data-id', task._id);
         card.className = `task-card ${task.isCompleted ? 'completed' : ''}`;
         
-        // Вибираємо, що показати: розв'язок користувача АБО твій початковий код
         const initialContent = task.solution || task.explanation || '';
 
         card.innerHTML = `
@@ -159,15 +157,18 @@ function renderTasks(tasks) {
             <p>${task.desc}</p>
             
             <textarea id="code-${task._id}" class="code-editor" 
-                      placeholder="Напишіть вашу функцію тут...">${initialContent}</textarea>
+                      placeholder="function ...">${initialContent}</textarea>
             
+            <div id="status-${task._id}" class="status-message"></div>
+
             <button class="action-btn" onclick="toggleTaskStatus('${task._id}')">
                 ${task.isCompleted ? '↩️ Скасувати' : '✅ Перевірити та зберегти'}
             </button>
         `;
         list.appendChild(card);
-        const textarea = document.getElementById(`code-${task._id}`);
-        setupCodeEditor(textarea);
+        
+        // Налаштовуємо Tab та дужки для кожного поля
+        setupCodeEditor(document.getElementById(`code-${task._id}`));
     });
 }
 
