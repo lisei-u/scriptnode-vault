@@ -245,12 +245,6 @@
 //         }
 //     });
 // }
-Тепер бачу проблему! Стара версія використовує **інший сервер** (`https://scriptnode-vault.onrender.com`) і має свою схему БД з `completedTasks` як масив об'єктів.
-
-Проблема в тому, що **нова версія (Brawl Code)** змінила формат `completedTasks` в базі даних, і тепер стара версія не працює.
-
-**Рішення**: Оновити модель User на сервері старої версії (Render), щоб вона підтримувала гнучкий формат. Ось виправлений `server.js`:
-Action: file_editor create /app/old-version/scriptnode-vault-master/server.js --file-text "require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
