@@ -16,7 +16,7 @@ app.use(express.json());
 
 // Налаштування CORS - важливо, щоб це було ПЕРЕД маршрутами
 app.use(cors({
-    origin: ['https://lisei-u.github.io', 'http://127.0.0.1:5500'], // Додав локалку для тестів
+    origin: ['https://lisei-u.github.io', 'http://127.0.0.1:5500', 'http://localhost:3000'],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -39,7 +39,10 @@ const taskSchema = new mongoose.Schema({
     explanation: String,
     difficulty: Number,
     testArgs: String,
-    expectedValue: String 
+    expectedValue: String,
+    // Нові поля для сумісності з Brawl Code
+    block: { type: Number, default: 1 },
+    order: { type: Number, default: 1 }
 });
 const Task = mongoose.model('Task', taskSchema);
 
@@ -47,11 +50,18 @@ const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, default: 'user' },
-    completedTasks: [{
-        taskId: { type: mongoose.Schema.Types.ObjectId, ref: 'Task' },
-        solution: String
-    }]
-});
+    // ГНУЧКИЙ ТИП для сумісності з обома версіями
+    completedTasks: { type: mongoose.Schema.Types.Mixed, default: [] },
+    // Нові поля для Brawl Code (опціональні)
+    xp: { type: Number, default: 0 },
+    level: { type: Number, default: 1 },
+    currentBlock: { type: Number, default: 1 },
+    avatar: { type: Number, default: 1 },
+    savedSolutions: { type: Map, of: String, default: {} },
+    lastPlayDate: { type: Date, default: null },
+    streak: { type: Number, default: 0 },
+    calendar: [{ type: Date }]
+}, { strict: false });
 const User = mongoose.model('User', userSchema);
 
 // --- MIDDLEWARE ---
@@ -98,23 +108,47 @@ app.post('/login', async (req, res) => {
     }
 });
 
+// --- ДОПОМІЖНА ФУНКЦІЯ для нормалізації completedTasks ---
+function normalizeCompletedTasks(completedTasks) {
+    if (!completedTasks || !Array.isArray(completedTasks)) return [];
+    
+    return completedTasks.map(item => {
+        // Якщо це об'єкт з taskId (старий формат) - повертаємо як є
+        if (typeof item === 'object' && item.taskId) {
+            return item;
+        }
+        // Якщо це рядок (новий формат) - конвертуємо в об'єкт
+        if (typeof item === 'string') {
+            return { taskId: item, solution: '' };
+        }
+        return item;
+    });
+}
+
 // --- МАРШРУТИ ЗАДАЧ ---
 app.get('/tasks', auth, async (req, res) => {
     try {
         const tasks = await Task.find({}).lean();
         const user = await User.findById(req.user.id);
 
+        // Нормалізуємо completedTasks
+        const normalizedTasks = normalizeCompletedTasks(user.completedTasks);
+
         const tasksWithProgress = tasks.map(task => {
-            const userTask = user.completedTasks.find(t => t.taskId && t.taskId.toString() === task._id.toString());
+            const userTask = normalizedTasks.find(t => {
+                const taskIdStr = t.taskId ? t.taskId.toString() : t.toString();
+                return taskIdStr === task._id.toString();
+            });
             return {
                 ...task,
                 isCompleted: !!userTask,
-                solution: userTask ? userTask.solution : ""
+                solution: userTask && userTask.solution ? userTask.solution : ""
             };
         });
 
         res.send(tasksWithProgress);
     } catch (e) {
+        console.error('Get tasks error:', e);
         res.status(500).send({ error: e.message });
     }
 });
@@ -135,17 +169,40 @@ app.post('/tasks/:id/complete', auth, async (req, res) => {
         const user = await User.findById(req.user.id);
         const { solution } = req.body;
         const taskId = req.params.id;
-        const taskIndex = user.completedTasks.findIndex(t => t.taskId && t.taskId.toString() === taskId);
+        
+        // Нормалізуємо існуючі дані
+        if (!Array.isArray(user.completedTasks)) {
+            user.completedTasks = [];
+        }
+        
+        // Шукаємо чи є вже таке завдання
+        const taskIndex = user.completedTasks.findIndex(t => {
+            if (typeof t === 'object' && t.taskId) {
+                return t.taskId.toString() === taskId;
+            }
+            if (typeof t === 'string') {
+                return t === taskId;
+            }
+            return false;
+        });
 
         if (taskIndex > -1) {
-            user.completedTasks[taskIndex].solution = solution;
+            // Оновлюємо solution
+            if (typeof user.completedTasks[taskIndex] === 'object') {
+                user.completedTasks[taskIndex].solution = solution;
+            } else {
+                user.completedTasks[taskIndex] = { taskId, solution };
+            }
         } else {
+            // Додаємо нове
             user.completedTasks.push({ taskId, solution });
         }
 
+        user.markModified('completedTasks');
         await user.save();
         res.send({ message: "Прогрес збережено" });
     } catch (e) {
+        console.error('Complete task error:', e);
         res.status(500).send({ error: e.message });
     }
 });
@@ -153,10 +210,24 @@ app.post('/tasks/:id/complete', auth, async (req, res) => {
 app.post('/tasks/:id/uncomplete', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
-        user.completedTasks = user.completedTasks.filter(t => t.taskId && t.taskId.toString() !== req.params.id);
+        
+        if (Array.isArray(user.completedTasks)) {
+            user.completedTasks = user.completedTasks.filter(t => {
+                if (typeof t === 'object' && t.taskId) {
+                    return t.taskId.toString() !== req.params.id;
+                }
+                if (typeof t === 'string') {
+                    return t !== req.params.id;
+                }
+                return true;
+            });
+        }
+        
+        user.markModified('completedTasks');
         await user.save();
         res.send({ message: "Статус скасовано" });
     } catch (e) {
+        console.error('Uncomplete task error:', e);
         res.status(500).send({ error: e.message });
     }
 });
